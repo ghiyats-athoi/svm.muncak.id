@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Risk Profiling Pendaki</title>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather&family=Open+Sans&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Merriweather', 'Open Sans', serif;
+            background-color: #f1f8e9;
+            color: #1b1b1b;
+            text-align: center;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: #2e7d32;
+            color: white;
+            padding: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .content-box {
+            background: white;
+            padding: 30px;
+            margin: 40px auto;
+            max-width: 600px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .hidden { display: none; }
+
+        .fadeOut {
+            animation: fadeOut 0.5s ease forwards;
+        }
+
+        .question {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .options label {
+            background: #e8f5e9;
+            padding: 10px;
+            display: block;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .options input[type="radio"] {
+            display: none;
+        }
+
+        .options input[type="radio"]:checked + label {
+            background: #81c784;
+            color: white;
+        }
+
+        button {
+            background-color: #81c784;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px 0;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #66bb6a;
+        }
+
+        button.cta {
+            background-color: #fdd835;
+            color: #1b1b1b;
+        }
+
+        button.cta:hover {
+            background-color: #fbc02d;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-30px); }
+        }
+
+        /* Result Styling Update */
+        .result-top {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        #risk-indicator {
+            font-size: 70px;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 3px solid #ccc;
+            background-color: #e0f2f1;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+
+        .risk-category {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .result-section {
+            background: #f9fbe7;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: left;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+
+        .user-answers {
+            font-size: 14px;
+            color: #555;
+            white-space: pre-wrap;
+        }
+
+        .recommendation-box {
+            background: #fffde7;
+            border-left: 5px solid #fbc02d;
+        }
+
+        .risk-message-text {
+            font-size: 16px;
+            color: #333;
+            text-align: justify;
+        }
+
+
+        @keyframes slideFadeIn {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #result {
+            animation: slideFadeIn 0.6s ease forwards;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>SISTEM KLASIFIKASI RISK PROFILING PENDAKI INDONESIA</h1>
+    </header>
+
+    <div id="welcome" class="content-box">
+        <h2>Welcome Pendaki Indonesia</h2>
+        <p>Selamat datang di sistem penilaian risiko pendakian gunung</p>
+        <button onclick="goToUserInfo()">Continue</button>
+    </div>
+
+    <div id="user-info" class="content-box hidden">
+        <h2>Informasi Pribadi</h2>
+        <div class="question">
+            <label for="nama">Nama:</label>
+            <input type="text" id="nama" name="nama" required>
+        </div>
+        <div class="question">
+            <label>Jenis Kelamin:</label>
+            <div class="options">
+                <input type="radio" id="gender-l" name="gender" value="Laki-laki"><label for="gender-l">Laki-laki</label>
+                <input type="radio" id="gender-p" name="gender" value="Perempuan"><label for="gender-p">Perempuan</label>
+            </div>
+        </div>
+        <button onclick="startSurvey()">Continue</button>
+    </div>
+
+    <div id="survey" class="content-box hidden">
+        <div id="question-container"></div>
+        <div>
+            <button onclick="prevQuestion()" id="prevBtn" class="hidden">Sebelumnya</button>
+            <button onclick="nextQuestion()" id="nextBtn">Selanjutnya</button>
+            <button class="hidden" onclick="submitForm()" id="submitBtn">Kirim</button>
+        </div>
+    </div>
+
+    <div id="result" class="content-box hidden">
+        <h2>Hasil Prediksi Risiko Anda</h2>
+        <div class="result-top">
+            <div id="risk-indicator">🟢</div>
+            <div>
+                <p id="prediction" class="risk-category">Kategori Risiko: -</p>
+            </div>
+        </div>
+        <div class="result-section">
+            <h3>Jawaban Anda</h3>
+            <p id="user-inputs" class="user-answers"></p>
+        </div>
+        <div class="result-section recommendation-box">
+            <h3>Rekomendasi & Saran</h3>
+            <p id="riskMessage" class="risk-message-text"></p>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+    { text: "Berada di dalam rentang berapa usia Anda saat ini?", options: ["50-60 tahun", "40-49 tahun", "30-39 tahun", "20-29 tahun", "15-19 tahun"] },
+    { text: "Bagaimana Anda menilai tingkat kebugaran tubuh Anda?", options: [
+        "Sangat tidak bugar, saya jarang berolahraga",
+        "Tidak bugar, saya berolahraga seminggu sekali",
+        "Sedang, saya berolahraga secara teratur 2-3 kali seminggu",
+        "Bugar, saya berolahraga secara aktif 4-5 kali seminggu",
+        "Sangat bugar, atlet profesional atau sangat aktif di gym"
+    ] },
+    { text: "Apakah Anda memiliki riwayat penyakit kardiovaskular, seperti hipertensi atau penyakit jantung koroner, atau penyakit respiratory, seperti asma atau bronkitis?", options: [
+        "Saya memiliki kondisi kardiovaskular dan respiratory yang serius sehingga membatasi aktivitas fisik saya",
+        "Saya memiliki riwayat penyakit kardiovaskular atau respiratory yang memerlukan pemantauan rutin",
+        "Saya memiliki riwayat penyakit kardiovaskular atau respiratory, tetapi telah berhasil diobati",
+        "Ada sedikit riwayat, tetapi tidak serius",
+        "Tidak, tidak ada riwayat sama sekali"
+    ] },
+    { text: "Bagaimana tingkat kepercayaan Anda saat menghadapi tantangan atau kondisi ekstrem dalam pendakian gunung?", options: [
+        "Sering merasa tidak aman dan mudah panik saat menghadapi kondisi sulit di pendakian, seperti cuaca buruk atau jalur terjal.",
+        "Sering ragu terhadap kemampuan diri dalam menghadapi medan pendakian, terutama saat di luar zona nyaman.",
+        "Percaya diri di kondisi tertentu, namun masih mudah goyah saat menghadapi tekanan fisik atau kondisi tak terduga.",
+        "Cukup yakin dengan kemampuan sendiri untuk tetap tenang dan mengambil keputusan saat menghadapi tantangan pendakian.",
+        "Sangat percaya diri dalam menghadapi berbagai situasi di alam terbuka, mampu mengelola stres dan tetap tenang dalam kondisi ekstrem."
+    ] },
+    { text: "Sejauh mana Anda memiliki peralatan dasar pendakian pribadi untuk menunjang keselamatan dan kenyamanan selama aktivitas pendakian?", options: [
+        "Tidak memiliki peralatan pendakian pribadi, misalnya: tidak memiliki kompas, tenda, alat masak, atau sleeping bag.",
+        "Hanya memiliki sebagian kecil peralatan dasar, misalnya: memiliki tas carrier dan jas hujan, namun tidak memiliki alat navigasi atau alat tidur.",
+        "Memiliki beberapa jenis peralatan penting untuk pendakian standar, misalnya memiliki tenda, matras, alat masak portable, dan botol air.",
+        "Memiliki perlengkapan pribadi yang lengkap untuk menghadapi berbagai kondisi, misalnya memiliki kompas, peta, tenda, sleeping bag, alat masak, dan P3K pribadi.",
+        "Memiliki peralatan pendakian lengkap dan khusus, termasuk untuk kondisi ekstrem, misalnya: tambahan GPS, alat filter air, emergency blanket, trekking pole, rain cover, repair kit, dan kompas analog."
+    ] },
+    { text: "Bagaimana Anda menilai pengetahuan Anda tentang pertolongan pertama (P3K)? (Contoh: menghentikan pendarahan, menangani cedera, atau memberikan bantuan pada kondisi darurat.)",
+  options: [
+        "Tidak memiliki pengetahuan, saya tidak memiliki pengetahuan tentang pertolongan pertama",
+        "Dasar, saya memahami prinsip dasar pertolongan pertama",
+        "Menengah, saya tahu cara menangani cedera ringan atau situasi darurat sederhana",
+        "Baik, saya percaya diri menerapkan pertolongan pertama dalam berbagai situasi",
+        "Sangat baik, saya bersertifikat dalam pertolongan pertama dan terampil menggunakannya"
+    ] },
+    { text: "Apa yang biasanya menjadi motivasi Anda untuk mendaki gunung?", options: [
+        "Ikut-ikutan, hanya sekadar FOMO, mengisi waktu luang, atau mengikuti teman",
+        "Eksistensi, membuat konten atau mendapatkan foto untuk media sosial",
+        "Tantangan, menguji fisik, mental, atau mencari pengalaman baru",
+        "Cinta alam, menikmati keindahan dan ketenangan alam",
+        "Gaya hidup, mendaki sebagai hobi, tadabbur alam, dan bagian dari kehidupan"
+    ] },
+    { text: "Seberapa sering Anda berpartisipasi dalam pendakian gunung?", options: [
+        "Saya tidak memiliki pengalaman atau baru saja memulainya",
+        "Saya jarang mendaki gunung, biasanya setahun sekali atau kurang.",
+        "Saya mendaki rute dengan tingkat kesulitan sedang setidaknya 1-2 kali per tahun.",
+        "Saya mendaki gunung secara teratur, dan telah berpartisipasi dalam berbagai pendakian 3-5 kali per tahun, termasuk rute yang lebih sulit.",
+        "Saya mendaki gunung secara teratur, lebih dari 5 kali dalam setahun, termasuk pada rute yang ekstrem dan teknis."
+    ] },
+    { text: "Bagaimana Anda menilai kemampuan Anda dalam merencanakan pendakian secara logistik?", options: [
+        "Hanya membawa logistik minimal tanpa mempertimbangkan kebutuhan pendakian, misal hanya air minum atau makanan ringan.",
+        "Menyiapkan makanan dan minuman dasar, namun belum mampu memperkirakan jumlah, jenis, dan perlengkapan pendukung, misal mie instan, air botol, dan jaket tipis.",
+        "Menyiapkan logistik dasar namun belum lengkap dan masih bergantung pada tim, misal makanan siap saji, jas hujan, P3K dasar, dan senter.",
+        "Biasa menyusun logistik mandiri sesuai kondisi dan durasi pendakian, misal alat masak, air dan makanan cukup, sleeping bag, serta pakaian sesuai cuaca.",
+        "Merencanakan logistik pribadi dan tim secara lengkap, termasuk perlengkapan darurat dan cadangan, misal firestarter, GPS/manual kompas, logistik cadangan, dan P3K lengkap."
+    ] },
+    { text: "Sejauh mana Anda menguasai cara penggunaan berbagai peralatan dasar pendakian", options: [
+        "Belum pernah menggunakan peralatan pendakian, misalnya belum tahu cara mendirikan tenda atau membaca kompas.",
+        "Dapat menggunakan peralatan dasar secara terbatas, misalnya bisa menyalakan kompor portable dan membuka tenda otomatis.",
+        "Dapat menggunakan berbagai jenis peralatan dengan cukup baik, misalnya bisa mendirikan tenda manual, menggunakan alat masak, dan membaca peta digital.",
+        "Menguasai menggunakan peralatan di berbagai situasi medan dan cuaca, misalnya: bisa membaca kompas dan peta topografi, serta memasak di kondisi basah atau berangin.",
+        "Ahli menggunakan berbagai peralatan pendakian secara efisien dan tepat, misalnya mahir navigasi manual, setting tenda di medan sulit, menggunakan GPS, serta mengatur beban perlengkapan sesuai kebutuhan."
+    ] },
+    { text: "Bagaimana Anda menilai keterampilan dasar Anda di alam bebas?", options: [
+        "Belum memiliki keterampilan dasar survival di alam terbuka, seperti belum bisa pasang tenda atau membuat api.",
+        "Memiliki keterampilan dasar sederhana, misal menyalakan api, mencari air, atau membuat perlindungan sederhana dari cuaca.",
+        "Mampu menangani kondisi darurat ringan secara mandiri, misal membuat bivak darurat, menghindari hipotermia, atau mengatur logistik darurat.",
+        "Percaya diri bertahan di kondisi sulit, misal pasang tenda di area aman dari banjir, navigasi jalur saat tersesat, dan penanganan cedera ringan.",
+        "Menguasai berbagai keterampilan survival secara menyeluruh, misal navigasi kompas/manual, teknik tali-temali, manajemen krisis di alam, serta pelatihan survival lanjutan."
+    ] },
+    { text: "Bagaimana Anda menilai kesiapan anggota tim Anda untuk pendakian? (Contoh: pengalaman pendakian, pengenalan medan, dan persiapan menghadapi kondisi di lapangan.)", options: [
+        "Sangat rendah, anggota tim tidak siap secara fisik atau mental, tanpa pengalaman atau pengenalan medan.",
+        "Rendah, beberapa anggota tim ada yang kurang pengalaman atau tidak mengenal medan.",
+        "Sedang, anggota tim cukup siap dengan beberapa anggota yang memiliki pengalaman atau pengenalan medan, meskipun masih ada kekurangan.",
+        "Siap, sebagian besar anggota tim berpengalaman dan mengenal medan.",
+        "Sangat siap, anggota tim sangat siap dengan pengalaman dan pengetahuan mendalam tentang medan serta kondisi di lapangan."
+    ] },
+    { text: "Apakah ada pemandu atau anggota tim yang memiliki pengalaman mendaki dan kemampuan memimpin di alam bebas?", options: [
+        "Tidak ada pemandu atau anggota tim tidak memiliki pengalaman mendaki.",
+        "Tidak ada pemandu, hanya ada satu anggota tim dengan pengalaman sangat minim dalam pendakian.",
+        "Tidak ada pemandu, namun ada satu atau dua anggota tim dengan pengalaman dasar dalam pendakian.",
+        "Ada satu atau lebih anggota tim yang cukup berpengalaman dan terbiasa mendaki, meskipun tanpa pemandu resmi.",
+        "Terdapat pemandu profesional dan anggota tim berpengalaman yang mampu memimpin dan mengarahkan pendakian secara efektif."
+    ] },
+    { text: "Bagaimana Anda menilai pembagian tugas dalam tim?", options: [
+        "Kurangnya pembagian tugas, tidak jelas siapa yang mengerjakan apa",
+        "Tugas didistribusikan tetapi tidak terorganisir dengan baik",
+        "Tugas didistribusikan secara merata tetapi ada masalah koordinasi",
+        "Pembagian tugas yang baik, tim bekerja sama dengan baik",
+        "Pembagian tugas yang sangat baik, semua orang terkoordinasi dengan baik dan efisien"
+    ] }
+];  
+        let currentQuestion = 0;
+        let userAnswers = new Array(questions.length).fill(null);
+    
+        function goToUserInfo() {
+            document.getElementById("welcome").classList.add("fadeOut");
+            setTimeout(() => {
+                document.getElementById("welcome").classList.add("hidden");
+                document.getElementById("user-info").classList.remove("hidden");
+            }, 500);
+        }
+    
+        function startSurvey() {
+            const name = document.getElementById("nama").value;
+            const gender = document.querySelector('input[name="gender"]:checked');
+            if (!name || !gender) {
+                alert("Harap isi nama dan pilih jenis kelamin!");
+                return;
+            }
+            document.getElementById("user-info").classList.add("fadeOut");
+            setTimeout(() => {
+                document.getElementById("user-info").classList.add("hidden");
+                document.getElementById("survey").classList.remove("hidden");
+                loadQuestion();
+            }, 500);
+        }
+    
+        function loadQuestion() {
+            const container = document.getElementById("question-container");
+            const q = questions[currentQuestion];
+            const savedAnswer = userAnswers[currentQuestion];
+    
+            container.innerHTML = `
+                <div class="question">
+                    <label><strong>${q.text}</strong></label>
+                    <div class="options">
+                        ${q.options.map((opt, idx) => `
+                            <input type="radio" id="q${currentQuestion + 1}-${idx + 1}" 
+                                name="q${currentQuestion + 1}" 
+                                value="${idx + 1}"
+                                ${savedAnswer == idx + 1 ? "checked" : ""}>
+                            <label for="q${currentQuestion + 1}-${idx + 1}">${opt}</label>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+    
+            document.getElementById("prevBtn").classList.toggle("hidden", currentQuestion === 0);
+            document.getElementById("nextBtn").classList.toggle("hidden", currentQuestion === questions.length - 1);
+            document.getElementById("submitBtn").classList.toggle("hidden", currentQuestion !== questions.length - 1);
+        }
+    
+        function nextQuestion() {
+            const selected = document.querySelector(`input[name="q${currentQuestion + 1}"]:checked`);
+            if (!selected) {
+                alert("Silakan pilih salah satu jawaban.");
+                return;
+            }
+            userAnswers[currentQuestion] = parseInt(selected.value);
+            currentQuestion++;
+            loadQuestion();
+        }
+    
+        function prevQuestion() {
+            if (currentQuestion > 0) {
+                const selected = document.querySelector(`input[name="q${currentQuestion + 1}"]:checked`);
+                if (selected) {
+                    userAnswers[currentQuestion] = parseInt(selected.value);
+                }
+                currentQuestion--;
+                loadQuestion();
+            }
+        }
+    
+        function submitForm() {
+    const selected = document.querySelector(`input[name="q${currentQuestion + 1}"]:checked`);
+    if (selected) {
+        userAnswers[currentQuestion] = parseInt(selected.value);
+    }
+
+    if (userAnswers.includes(null)) {
+        alert("Harap isi semua pertanyaan sebelum mengirim!");
+        return;
+    }
+
+    let formData = new URLSearchParams();
+    userAnswers.forEach((val, idx) => {
+        formData.append(`q${idx + 1}`, val);
+    });
+
+    fetch('/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData.toString()
+    })
+    .then(response => response.json())
+    .then(data => {
+    document.getElementById("survey").classList.add("fadeOut");
+    setTimeout(() => {
+        document.getElementById("survey").classList.add("hidden");
+        document.getElementById("result").classList.remove("hidden");
+    }, 500);
+    document.getElementById("prediction").innerText = `Kategori Risiko: ${data.prediction}`;
+    document.getElementById("user-inputs").innerText = `Jawaban Anda: [${userAnswers.join(", ")}]`;
+
+    const indicator = document.getElementById("risk-indicator");
+    const cat = data.prediction;
+    let riskMessage = "";
+
+    if (cat === "SANGAT AMAN") {
+        indicator.style.backgroundColor = "green";
+        indicator.innerText = "🟢";
+    } else if (cat === "AMAN") {
+        indicator.style.backgroundColor = "blue";
+        indicator.innerText = "🔵";
+    } else if (cat === "BAHAYA") {
+        indicator.style.backgroundColor = "orange";
+        indicator.innerText = "⚠️";
+    } else if (cat === "SANGAT BAHAYA") {
+        indicator.style.backgroundColor = "red";
+        indicator.innerText = "⛔";
+    }
+
+    // Displaying the risk message from the response
+    document.getElementById("riskMessage").innerText = data.risk_message; // Ambil pesan risiko dari respons
+})
+    .catch(error => console.error("Error:", error));
+}
+    </script>    
+</body>
+</html>
